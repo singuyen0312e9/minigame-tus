@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Game Lucky Draw</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #ddeeff;        /* soft pastel blue page bg  */
+      --card:       #ffffff;
+      --blue-1:     #b8d9f8;        /* light accent              */
+      --blue-2:     #5aabf0;        /* medium accent             */
+      --blue-3:     #1e7fd4;        /* strong CTA                */
+      --blue-dark:  #0d4f8a;        /* text on light blue        */
+      --gold:       #f5c842;
+      --gold-dark:  #c4952a;
+      --red-soft:   #fde8e8;
+      --red-text:   #b94040;
+      --text:       #1a2e45;
+      --muted:      #5a7a9a;
+      --radius-lg:  24px;
+      --radius-md:  16px;
+      --radius-sm:  12px;
+      --shadow:     0 8px 32px rgba(30, 127, 212, 0.18);
+      --shadow-sm:  0 4px 16px rgba(30, 127, 212, 0.12);
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    /* ── Page system ── */
+    .page { display: none; width: 100%; max-width: 420px; animation: fadeUp .45s ease both; }
+    .page.active { display: flex; flex-direction: column; align-items: center; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 40px 32px 36px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    /* ── Badge / tag ── */
+    .badge {
+      background: var(--blue-1);
+      color: var(--blue-dark);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 99px;
+      margin-bottom: 20px;
+    }
+
+    /* ── Icon circle ── */
+    .icon-wrap {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      margin-bottom: 24px;
+    }
+    .icon-wrap.blue  { background: var(--blue-1); }
+    .icon-wrap.gold  { background: #fef3c7; }
+    .icon-wrap.soft  { background: #e8f4ff; }
+
+    /* ── Headings ── */
+    h1 {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+    h2 {
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.3;
+      margin-bottom: 12px;
+    }
+    p.desc {
+      font-size: 15px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      border-radius: 99px;
+      padding: 15px 36px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+      width: 100%;
+      max-width: 280px;
+    }
+    .btn:active { transform: scale(.97); }
+
+    .btn-primary {
+      background: var(--blue-3);
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(30, 127, 212, .40);
+    }
+    .btn-primary:hover { box-shadow: 0 8px 28px rgba(30, 127, 212, .55); }
+
+    .btn-gold {
+      background: var(--gold);
+      color: var(--gold-dark);
+      box-shadow: 0 6px 20px rgba(245, 200, 66, .50);
+    }
+    .btn-gold:hover { box-shadow: 0 8px 28px rgba(245, 200, 66, .65); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--blue-3);
+      border: 2px solid var(--blue-2);
+    }
+    .btn-outline:hover { background: var(--blue-1); }
+
+    .admin-entry {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 12px;
+      color: var(--blue-dark);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .admin-entry:hover { color: var(--blue-3); }
+
+    /* ── Stats bar (cover page) ── */
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 28px;
+    }
+    .stat-pill {
+      flex: 1;
+      background: #eef5fd;
+      border-radius: var(--radius-sm);
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .stat-pill .num {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--blue-3);
+      display: block;
+    }
+    .stat-pill .lbl {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    /* ── Win message ── */
+    .win-msg {
+      background: linear-gradient(135deg, #fffbe6, #fff8cc);
+      border: 2px solid var(--gold);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      text-align: center;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+    .win-msg h2 { color: #b07a10; margin-bottom: 0; }
+
+    /* ── Lose message ── */
+    .lose-msg {
+      background: #eef6ff;
+      border: 2px solid var(--blue-1);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      text-align: center;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+    .lose-msg h2 { color: var(--blue-dark); margin-bottom: 0; }
+
+    /* ── Note ── */
+    .note {
+      font-size: 12.5px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+      margin-top: 16px;
+      padding: 0 4px;
+    }
+    .note strong { color: var(--text); }
+
+    /* ── Confetti canvas ── */
+    #confetti-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ── Ended banner ── */
+    .ended-banner {
+      background: var(--red-soft);
+      border: 2px solid #f5c6c6;
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      text-align: center;
+      width: 100%;
+      margin-bottom: 8px;
+      color: var(--red-text);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 48px; height: 3px;
+      background: var(--blue-1);
+      border-radius: 99px;
+      margin: 8px auto 20px;
+    }
+
+    /* ── Spinner (during "rolling") ── */
+    .spinner-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 0 8px;
+    }
+    .spinner {
+      width: 52px; height: 52px;
+      border: 5px solid var(--blue-1);
+      border-top-color: var(--blue-3);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 440px) {
+      .card { padding: 32px 20px 28px; }
+      h1 { font-size: 22px; }
+      h2 { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========================================================
+     CANVAS for confetti (win page)
+======================================================== -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ========================================================
+     PAGE 1: COVER
+======================================================== -->
+<div id="page-cover" class="page active">
+  <div class="card">
+    <div class="badge">🎰 Lucky Draw Campaign</div>
+
+    <div class="icon-wrap blue">🎁</div>
+
+    <h1>Mini Game Lucky Draw</h1>
+    <div class="divider"></div>
+    <p class="desc">Nhấn nút bên dưới để tham gia minigame và xem bạn có trúng phần quà hay không.</p>
+
+    <!-- Live stats pills -->
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <span class="num" id="stat-plays">0</span>
+        <span class="lbl">Lượt chơi</span>
+      </div>
+      <div class="stat-pill">
+        <span class="num" id="stat-winners">0</span>
+        <span class="lbl">Trúng thưởng</span>
+      </div>
+      <div class="stat-pill">
+        <span class="num" id="stat-prizes">10</span>
+        <span class="lbl">Phần quà còn</span>
+      </div>
+    </div>
+
+    <!-- Ended banner (hidden by default) -->
+    <div id="ended-banner" class="ended-banner" style="display:none;">
+      🚫 Minigame đã kết thúc.<br>Cảm ơn tất cả đã tham gia!
+    </div>
+
+    <!-- Already played notice (hidden by default) -->
+    <div id="played-banner" class="ended-banner" style="display:none; background:#fff3cd; border-color:#ffc107; color:#856404;">
+      ⚠️ Bạn đã tham gia rồi.<br>Mỗi người chỉ được chơi một lần.
+    </div>
+
+    <button class="btn btn-primary" id="btn-play">
+      🎮 Tham gia ngay
+    </button>
+    <a class="admin-entry" href="/admin">Admin</a>
+  </div>
+</div>
+
+<!-- ========================================================
+     PAGE 2: WIN
+======================================================== -->
+<div id="page-win" class="page">
+  <div class="card">
+    <div class="badge">🏆 Kết quả</div>
+
+    <div class="icon-wrap gold">🎉</div>
+
+    <div class="win-msg">
+      <h2>🎊 Bạn đã trúng thưởng!</h2>
+    </div>
+
+    <p class="desc" style="margin-bottom:0;">
+      Chúc mừng! Bạn là một trong những người may mắn nhận được phần quà hôm nay.
+    </p>
+
+    <div class="divider"></div>
+
+    <button class="btn btn-gold" id="btn-claim">
+      🎁 Nhận quà
+    </button>
+
+    <p class="note">
+      <strong>📸 Lưu ý:</strong> Vui lòng chụp màn hình kết quả này để được hỗ trợ nhận quà.
+    </p>
+  </div>
+</div>
+
+<!-- ========================================================
+     PAGE 3: LOSE
+======================================================== -->
+<div id="page-lose" class="page">
+  <div class="card">
+    <div class="badge">🎮 Kết quả</div>
+
+    <div class="icon-wrap soft">😊</div>
+
+    <div class="lose-msg">
+      <h2>Chúc bạn may mắn lần sau!</h2>
+    </div>
+
+    <p class="desc" style="margin-bottom:0;">
+      Lần này chưa may mắn, nhưng đừng nản lòng! Hãy theo dõi các chương trình tiếp theo nhé.
+    </p>
+
+    <div class="divider"></div>
+
+    <button class="btn btn-outline" id="btn-back">
+      🏠 Quay lại
+    </button>
+  </div>
+</div>
+
+<!-- ========================================================
+     PAGE 4: ROLLING (transition)
+======================================================== -->
+<div id="page-rolling" class="page">
+  <div class="card">
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <p style="color:var(--muted); font-weight:700; font-size:15px;">Đang quay số may mắn…</p>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================
+     JAVASCRIPT — Game Logic
+======================================================== -->
+<script>
+  const API_PLAY = '/api/play';
+  const API_STATS = '/api/stats';
+  const REDIRECT_LOSE = 'https://opodispharma.com/';
+
+  const btnPlay = document.getElementById('btn-play');
+  const btnClaim = document.getElementById('btn-claim');
+  const btnBack = document.getElementById('btn-back');
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(id);
+    target.classList.remove('active');
+    void target.offsetWidth;
+    target.classList.add('active');
+  }
+
+  async function refreshStats() {
+    try {
+      const r = await fetch(API_STATS);
+      const d = await r.json();
+      document.getElementById('stat-plays').textContent = d.total || 0;
+      document.getElementById('stat-winners').textContent = d.winners || 0;
+      document.getElementById('stat-prizes').textContent = (typeof d.remaining === 'number') ? d.remaining : Math.max(0, (10 - (d.winners||0)) );
+      // if ended (based on settings returned)
+      const maxPlays = d.maxPlays || 600;
+      const maxWinners = d.maxWinners || 10;
+      if ((d.remaining || 0) <= 0 || (d.total || 0) >= maxPlays) {
+        document.getElementById('ended-banner').style.display = 'block';
+        btnPlay.disabled = true; btnPlay.style.opacity = '.5';
+      }
+    } catch (e) {
+      console.warn('Could not load stats', e);
+    }
+  }
+
+  async function startGame() {
+    btnPlay.disabled = true;
+    showPage('page-rolling');
+    try {
+      const resp = await fetch(API_PLAY, { method: 'POST' });
+      const data = await resp.json();
+      if (data.result === 'win') {
+        await refreshStats();
+        showPage('page-win');
+        launchConfetti();
+      } else if (data.result === 'lose') {
+        // immediate redirect on lose
+        window.location.replace(REDIRECT_LOSE);
+      } else if (data.result === 'already_played') {
+        document.getElementById('played-banner').style.display = 'block';
+        btnPlay.disabled = true; btnPlay.style.opacity = '.5';
+        showPage('page-cover');
+      } else if (data.result === 'ended') {
+        document.getElementById('ended-banner').style.display = 'block';
+        btnPlay.disabled = true; btnPlay.style.opacity = '.5';
+        showPage('page-cover');
+      } else {
+        console.warn('Unknown response', data);
+        showPage('page-cover');
+      }
+    } catch (e) {
+      console.error(e);
+      showPage('page-cover');
+    } finally {
+      btnPlay.disabled = false;
+    }
+  }
+
+  function claimPrize() {
+    alert('🎁 Cảm ơn bạn! Vui lòng chụp màn hình và liên hệ ban tổ chức để nhận quà.');
+  }
+
+  function goHome() {
+    refreshStats();
+    showPage('page-cover');
+  }
+
+  // Confetti (canvas-based)
+  function launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const colours = ['#5aabf0','#f5c842','#ff7eb3','#6de6b0','#ffaa5c','#c490f0','#ff6b6b'];
+    const pieces = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * 200,
+      w: 6 + Math.random() * 8,
+      h: 10 + Math.random() * 6,
+      rot: Math.random() * Math.PI * 2,
+      dRot: (Math.random() - .5) * .12,
+      vy: 2.5 + Math.random() * 3,
+      vx: (Math.random() - .5) * 2,
+      col: colours[Math.floor(Math.random() * colours.length)]
+    }));
+
+    let raf;
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      let alive = false;
+      for (const p of pieces) {
+        p.y += p.vy; p.x += p.vx; p.rot += p.dRot;
+        if (p.y < canvas.height + 20) alive = true;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.col; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      }
+      if (alive) raf = requestAnimationFrame(draw);
+    }
+    draw();
+    setTimeout(()=>{ cancelAnimationFrame(raf); ctx.clearRect(0,0,canvas.width,canvas.height); }, 4200);
+  }
+
+  // Init
+  (function(){
+    refreshStats();
+    btnPlay.addEventListener('click', startGame);
+    btnClaim.addEventListener('click', claimPrize);
+    btnBack.addEventListener('click', goHome);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Minigame - Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#ffffff; --muted:#6b7280; --accent:#2563eb; --accent-600:#1e40af; --danger:#ef4444; --surface:#f8fafc;
+      --radius:12px; --shadow-lg: 0 12px 40px rgba(17,24,39,0.08); --shadow-sm:0 6px 18px rgba(15,22,39,0.04);
+    }
+    html,body{height:100%;margin:0}
+    body{font-family:Inter,system-ui,Arial,Helvetica;color:#071124;background:var(--bg);padding:36px;display:flex;justify-content:center}
+    .container{width:100%;max-width:1200px}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:22px 24px}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+    .title{display:block}
+    .title h1{margin:0;font-size:24px;color:#0b1726}
+    .title p{margin:8px 0 0;color:var(--muted);font-size:13px;max-width:540px}
+    .right-controls{display:flex;gap:12px;align-items:center}
+    .summary-box{background:var(--surface);padding:10px 14px;border-radius:10px;font-weight:700;color:#0f1724;box-shadow:var(--shadow-sm);min-width:180px;text-align:center}
+    .admin-indicator{font-size:13px;color:var(--muted);margin-left:8px}
+    .btn{padding:8px 14px;border-radius:10px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-weight:700;box-shadow:0 6px 18px rgba(37,99,235,0.08)}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(37,99,235,0.12);box-shadow:none}
+    .btn.danger{background:var(--danger);box-shadow:none}
+    .controls-row{display:flex;gap:20px;align-items:center;margin-top:18px}
+    .config{display:flex;gap:12px;align-items:center}
+    input[type=number], input[type=text]{padding:10px;border-radius:8px;border:1px solid #e6eef8;width:140px;background:#fff}
+    .controls-row .label{font-weight:600;margin-right:6px}
+    table{width:100%;border-collapse:collapse;margin-top:18px;border-radius:8px;overflow:hidden;background:#fff}
+    thead tr{background:#fbfdff}
+    th,td{padding:14px 16px;text-align:left;font-size:14px;border-bottom:1px solid #f1f5f9;color:#0f1724}
+    th{font-weight:700;color:var(--muted);font-size:13px}
+    tbody tr:hover{background:#fbfdfe}
+    .action-btn{padding:6px 10px;border-radius:8px;border:0;background:#111827;color:#fff;cursor:pointer;font-weight:700}
+    .action-btn.danger{background:var(--danger)}
+    #login-box{display:flex;flex-direction:column;gap:12px;background:linear-gradient(180deg,#ffffff,#fbfdff);padding:14px;border-radius:10px;border:1px solid #eef2f7}
+    #login-box .row{display:flex;gap:8px;align-items:center}
+    #login-box input{width:180px;padding:10px;border-radius:8px;border:1px solid #e6eef8}
+    .top-grid{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
+    @media(max-width:880px){.top-grid{grid-template-columns:1fr}.right-controls{justify-content:flex-end}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="title">
+          <h1>Trang quản trị</h1>
+          <p>Quản lý minigame — xem lượt chơi, xử lý khiếu nại và điều chỉnh cấu hình chiến dịch.</p>
+        </div>
+        <div class="right-controls">
+            <div id="stats" class="stat-pill">Plays: 0 • Winners: 0</div>
+            <div id="admin-indicator" style="font-size:13px;color:var(--muted);margin-left:8px;display:none">Admin: admin</div>
+          <button id="refresh" class="btn ghost">Làm mới</button>
+          <button id="reset" class="btn danger">Reset DB</button>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <!-- In-page admin login (shown when needed) -->
+          <div id="login-box" style="display:block;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div>
+              <strong>Đăng nhập Admin</strong>
+              <div style="margin-top:6px;color:var(--muted);font-size:13px">Nhập tài khoản để truy cập API quản trị</div>
+            </div>
+              <div style="display:flex;gap:8px;align-items:center">
+              <input id="loginUser" placeholder="User" autocomplete="off" />
+              <input id="loginPass" placeholder="Password" type="password" autocomplete="new-password" />
+              <button id="loginBtn" class="btn">Đăng nhập</button>
+              <button id="logoutBtn" class="btn danger">Logout</button>
+            </div>
+          </div>
+          <div id="loginMsg" style="color:var(--danger);margin-top:8px;display:none"></div>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <div class="config">
+          <strong style="margin-right:6px">Cấu hình</strong>
+          <label>Phần quà: <input id="maxWinners" type="number" /></label>
+          <label>Tổng lượt: <input id="maxPlays" type="number" /></label>
+          <button id="saveSettings" class="btn">Lưu</button>
+        </div>
+      </div>
+
+      <table id="plays-table">
+        <thead>
+          <tr><th style="width:60px">#</th><th>Lượt</th><th>IP Hash</th><th>Kết quả</th><th>Thời gian</th><th style="width:110px">Hành động</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const statsDiv = document.getElementById('stats');
+    const tbody = document.querySelector('#plays-table tbody');
+    const refreshBtn = document.getElementById('refresh');
+    const resetBtn = document.getElementById('reset');
+
+    // Helper to perform admin fetches with optional in-page auth header
+    function adminFetch(url, opts = {}){
+      opts = Object.assign({ headers: {} }, opts || {});
+      if (window.__adminAuth) {
+        opts.headers = Object.assign(opts.headers || {}, { 'Authorization': window.__adminAuth });
+      } else {
+        opts.credentials = 'include';
+      }
+      return fetch(url, opts).then(async r => {
+        if (r.status === 401 || r.status === 403) {
+          // show login box
+          document.getElementById('login-box').style.display = 'block';
+          throw r;
+        }
+        return r;
+      });
+    }
+
+    async function loadSettings(){
+      try{
+        const r = await adminFetch('/api/admin/settings');
+        const s = await r.json();
+        document.getElementById('maxWinners').value = s.maxWinners;
+        document.getElementById('maxPlays').value = s.maxPlays;
+      }catch(e){
+        if (e && e.status) {
+          document.getElementById('loginMsg').style.display = 'block';
+          document.getElementById('loginMsg').innerText = 'Yêu cầu xác thực. Vui lòng đăng nhập.';
+        } else console.warn('settings load failed', e);
+      }
+    }
+
+    async function saveSettings(){
+      try{
+        const maxWinners = parseInt(document.getElementById('maxWinners').value,10);
+        const maxPlays = parseInt(document.getElementById('maxPlays').value,10);
+        if (Number.isNaN(maxWinners) || Number.isNaN(maxPlays)) { alert('Giá trị không hợp lệ'); return; }
+        if (maxWinners > maxPlays) { if (!confirm('Số phần quà lớn hơn tổng lượt, tự động đặt phần quà = tổng lượt?')) return; }
+        const r = await adminFetch('/api/admin/settings', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ maxWinners, maxPlays }) });
+        const data = await r.json();
+        if (data.ok) { alert('Saved'); loadStats(); }
+        else alert('Save failed');
+      }catch(e){
+        if (e && e.status) alert('Save failed or authentication required'); else { console.error(e); alert('Save request failed') }
+      }
+    }
+
+    async function loadStats(){
+      try{
+        const r = await adminFetch('/api/admin/stats');
+        const data = await r.json();
+        statsDiv.innerText = `Plays: ${data.total} • Winners: ${data.winners} • Prizes: ${data.remaining}`;
+        tbody.innerHTML = '';
+        (data.plays||[]).forEach((p, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${p.id}</td><td>${p.play_no}</td><td>${p.ip_hash}</td><td>${p.result}</td><td>${new Date(p.created_at).toLocaleString()}</td><td><button data-id="${p.id}" data-ip="${p.ip_hash}" class="del">Xóa</button></td>`;
+          tbody.appendChild(tr);
+        });
+        // attach delete handlers
+        document.querySelectorAll('button.del').forEach(btn => {
+          btn.addEventListener('click', async (e)=>{
+            const id = btn.dataset.id;
+            if (!confirm('Xóa lượt này?')) return;
+            try{
+              const r = await adminFetch(`/api/admin/play/${id}`, { method: 'DELETE' });
+              if (!r.ok) { alert('Delete failed or authentication required'); return; }
+              const res = await r.json();
+              if (res.ok) { loadStats(); }
+              else alert('Delete failed');
+            }catch(err){console.error(err);alert('Request failed')}
+          });
+        });
+      }catch(e){
+        console.error(e);statsDiv.innerText='Error loading stats';
+      }
+    }
+
+    refreshBtn.addEventListener('click', loadStats);
+    resetBtn.addEventListener('click', async ()=>{
+      if (!confirm('Reset the database? This will delete all plays.')) return;
+      try{
+        const r = await adminFetch('/api/admin/reset', { method: 'DELETE' });
+        if (!r.ok) { alert('Reset failed or auth required'); return; }
+        const data = await r.json();
+        if (data.ok) { loadStats(); alert('Database reset'); }
+        else alert('Reset failed');
+      }catch(e){console.error(e);alert('Reset request failed')}
+    });
+
+    document.getElementById('saveSettings').addEventListener('click', saveSettings);
+
+    // login handlers
+    document.getElementById('loginBtn').addEventListener('click', async ()=>{
+      const u = document.getElementById('loginUser').value;
+      const p = document.getElementById('loginPass').value;
+      if (!u || !p) { document.getElementById('loginMsg').innerText = 'Vui lòng nhập user và password'; document.getElementById('loginMsg').style.display='block'; return; }
+      window.__adminAuth = 'Basic ' + btoa(u + ':' + p);
+      // try loading settings/stats
+      try{ await loadSettings(); await loadStats(); document.getElementById('login-box').style.display='none'; document.getElementById('loginMsg').style.display='none';
+        document.getElementById('admin-indicator').innerText = 'Admin: ' + u; document.getElementById('admin-indicator').style.display='block';
+      }
+      catch(err){ document.getElementById('loginMsg').innerText = 'Đăng nhập thất bại'; document.getElementById('loginMsg').style.display='block'; }
+    });
+    document.getElementById('logoutBtn').addEventListener('click', ()=>{
+      window.__adminAuth = null;
+      document.getElementById('login-box').style.display='none';
+      document.getElementById('loginUser').value = '';
+      document.getElementById('loginPass').value = '';
+      document.getElementById('admin-indicator').style.display='none';
+    });
+
+    // removed test button and handler to simplify login flow
+
+    // Load public stats initially (no auth) to avoid 403 console errors
+    fetch('/api/stats')
+      .then(r => { if (!r.ok) return; return r.json(); })
+      .then(d => { if (d) statsDiv.innerText = `Plays: ${d.total} • Winners: ${d.winners} • Prizes: ${d.remaining}`; })
+      .catch(() => {});
+
+    // Do not call admin endpoints until logged in. When login succeeds, handlers will call loadSettings/loadStats.
+    // Auto-poll public stats every 5s to keep the top summary updated.
+    setInterval(async ()=>{
+      try{
+        const r = await fetch('/api/stats');
+        if (r.ok){ const d = await r.json(); statsDiv.innerText = `Plays: ${d.total} • Winners: ${d.winners} • Prizes: ${d.remaining}`; }
+      }catch(e){}
+    }, 5000);
+  </script>
+</body>
+</html>
